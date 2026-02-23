@@ -7,12 +7,13 @@ public class Main extends JFrame{
     }
     private void initUI () {
         add(new Board());
-        setTitle("Man eating pac");
+        setTitle("Ghost eating pac");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(380,420);
         setLocationRelativeTo(null);
 
     }
+
     public static void main(String[]args) {
         EventQueue.invokeLater(() -> {
             Main ex = new Main();
