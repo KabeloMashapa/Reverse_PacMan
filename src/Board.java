@@ -25,6 +25,10 @@ public class Board extends JPanel {
     private int MAX_GHOST ;
     private int pacsleft,score;
     private int[] ghost_x ,ghost_dx, ghost_y ,ghost_dy , ghostSpeed,dx,dy;
+    private Image ghost;
+    private Image pacman1, pacman2up, pacman2left, pacman2right,pacman2down;
+    private Image pacman3up,pacman3left,pacman3right,pacman3down;
+    private Image pacman4up,pacman4left,pacman4right,pacman4down;
 
     private int pacman_x , pacman_y, pacman_dx, pacman_dy ;
     private int req_dx , req_dy , view_dx ,view_dy ;
@@ -43,6 +47,7 @@ public class Board extends JPanel {
     private Timer timer ;
 
     public Board() {
+        loadImages();
         initVariables();
         initBoard();
 
@@ -68,6 +73,86 @@ public class Board extends JPanel {
     public void addNotify() {
         super.addNotify();
         initGame();
+    }
+    private void playGame(Graphics2D g2d) {
+        drawPacman(g2d);
+    }
+    private void drawPacman(Graphics2D g2d) {
+        if(view_dx == -1) {
+            drawPacmanLeft(g2d);
+        }
+        else if(view_dx == 1){
+            drawPacmanRight(g2d);
+        }
+        else if(view_dy == -1) {
+            drawPacmanUp(g2d);
+        }else {
+            drawPacmanDown(g2d);
+        }
+    }
+    private void drawPacmanUp(Graphics2D g2d) {
+        switch(pacmanAnimPos) {
+            case 1 :
+                g2d.drawImage(pacman2up,pacman_x+1,pacman_y+1,this);
+                break;
+            case 2 :
+                g2d.drawImage(pacman3up,pacman_x+1,pacman_y+1,this);
+                break;
+            case 3 :
+                g2d.drawImage(pacman4up,pacman_x+1,pacman_y+1,this);
+                break;
+            default:
+                g2d.drawImage(pacman1,pacman_x+1,pacman_y+1,this);
+                break;
+        }
+    }
+    private void drawPacmanDown(Graphics2D g2d) {
+        switch(pacmanAnimPos) {
+            case 1 :
+                g2d.drawImage(pacman2down,pacman_x+1,pacman_y+1,this);
+                break;
+            case 2 :
+                g2d.drawImage(pacman3down,pacman_x+1,pacman_y+1,this);
+                break;
+            case 3 :
+                g2d.drawImage(pacman4down,pacman_x+1,pacman_y+1,this);
+                break;
+            default:
+                g2d.drawImage(pacman1,pacman_x+1,pacman_y+1,this);
+                break;
+        }
+    }
+    private void drawPacmanLeft(Graphics2D g2d) {
+        switch(pacmanAnimPos) {
+            case 1 :
+                g2d.drawImage(pacman2left,pacman_x+1,pacman_y+1,this);
+                break;
+            case 2 :
+                g2d.drawImage(pacman3left,pacman_x+1,pacman_y+1,this);
+                break;
+            case 3 :
+                g2d.drawImage(pacman4left,pacman_x+1,pacman_y+1,this);
+                break;
+            default:
+                g2d.drawImage(pacman1,pacman_x+1,pacman_y+1,this);
+                break;
+        }
+    }
+    private void drawPacmanRight(Graphics2D g2d) {
+        switch(pacmanAnimPos) {
+            case 1 :
+                g2d.drawImage(pacman2right,pacman_x+1,pacman_y+1,this);
+                break;
+            case 2 :
+                g2d.drawImage(pacman3right,pacman_x+1,pacman_y+1,this);
+                break;
+            case 3 :
+                g2d.drawImage(pacman4right,pacman_x+1,pacman_y+1,this);
+                break;
+            default:
+                g2d.drawImage(pacman1,pacman_x+1,pacman_y+1,this);
+                break;
+        }
     }
     private void initGame(){
         pacsleft = 3 ;
@@ -122,10 +207,27 @@ public class Board extends JPanel {
         g2d.setColor(Color.black);
         g2d.fillRect(0,0,d.width,d.height);
         drawMaze(g2d);
+        playGame(g2d);
         g2d.drawImage(ii,5,5,this);
         Toolkit.getDefaultToolkit().sync();
         g2d.dispose();
 
+    }
+    private void loadImages(){
+        ghost = new ImageIcon("Pacman_Pics/ghost.png").getImage();
+        pacman1 = new ImageIcon("Pacman_Pics/pacman.png").getImage();
+        pacman2up = new ImageIcon("Pacman_Pics/up1.png").getImage();
+        pacman3up = new ImageIcon("Pacman_Pics/up2.png").getImage();
+        pacman4up= new ImageIcon("Pacman_Pics/up3.png").getImage();
+        pacman2down = new ImageIcon("Pacman_Pics/down1.png").getImage();
+        pacman3down = new ImageIcon("Pacman_Pics/down2.png").getImage();
+        pacman4down = new ImageIcon("Pacman_Pics/down3.png").getImage();
+        pacman2left = new ImageIcon("Pacman_Pics/left1.png").getImage();
+        pacman3left = new ImageIcon("Pacman_Pics/left2.png").getImage();
+        pacman4left = new ImageIcon("Pacman_Pics/left3.png").getImage();
+        pacman2right = new ImageIcon("Pacman_Pics/right1.png").getImage();
+        pacman3right = new ImageIcon("Pacman_Pics/right2.png").getImage();
+        pacman4right = new ImageIcon("Pacman_Pics/right3.png").getImage();
     }
 
 
