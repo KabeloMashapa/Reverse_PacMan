@@ -75,7 +75,39 @@ public class Board extends JPanel {
         initGame();
     }
     private void playGame(Graphics2D g2d) {
+        movePacman();
         drawPacman(g2d);
+    }
+    private void movePacman() {
+        int pos ;
+        int ch ;
+        if(req_dx == -pacman_dx && req_dy == pacman_dy) {
+            pacman_dx = req_dx;
+            pacman_dy = req_dy;
+            view_dx = pacman_dx;
+            view_dy = pacman_dy;
+        }
+        if(pacman_dx % Block_Size == 0 && pacman_dy % Block_Size == 0) {
+            pos = pacman_x / Block_Size + N_BLOCKS* (int)(pacman_y/Block_Size);
+            ch = screenData[pos];
+            if((ch & 16) != 0) {
+                screenData[pos] = (short)(ch & 15);
+                score++;
+            }
+            if(req_dx != 0 || req_dy != 0) {
+                if(!((req_dx == -1 && req_dy == 0 && (ch & 1) != 0)
+                || req_dx == 1 && req_dy == 0) && ((ch & 4) !=0) || (req_dx == 0 && req_dy ==-1)
+                || (req_dx == 0 && req_dy == 1)) {
+                   pacman_dx = req_dx ;
+                   pacman_dy = req_dy ;
+                   view_dx = pacman_x ;
+                   view_dy = pacman_y ;
+                }
+                if(pacman_dx == -1 && pacman_dy == 0 && (ch & 1) != 0) {
+
+                }
+            }
+        }
     }
     private void drawPacman(Graphics2D g2d) {
         if(view_dx == -1) {
