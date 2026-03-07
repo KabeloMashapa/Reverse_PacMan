@@ -100,13 +100,20 @@ public class Board extends JPanel {
                 || (req_dx == 0 && req_dy == 1)) {
                    pacman_dx = req_dx ;
                    pacman_dy = req_dy ;
-                   view_dx = pacman_x ;
-                   view_dy = pacman_y ;
+                   view_dx = pacman_dx ;
+                   view_dy = pacman_dy ;
                 }
-                if(pacman_dx == -1 && pacman_dy == 0 && (ch & 1) != 0) {
+                if((pacman_dx == -1 && pacman_dy == 0 && (ch & 1) != 0)
+                || (pacman_dx == 1 && pacman_dy == 0 && (ch & 4)!= 0) ||
+                        (pacman_dx == 0 && pacman_dy == -1 && (ch & 2) != 0)
+                || (req_dx == 0 && req_dy == -1 && (ch & 2)!=0)
+                ) {
+                    pacman_dx = 0 ;
+                    pacman_dy = 0 ;
 
                 }
             }
+            pacman_x = pacman_x + PACMAN_SPEED * pacman_dx ;
         }
     }
     private void drawPacman(Graphics2D g2d) {
