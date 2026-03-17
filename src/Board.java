@@ -94,8 +94,65 @@ public class Board extends JPanel implements ActionListener {
     }
     private void playGame(Graphics2D g2d) {
         movePacman();
+        moveGhosts(g2d);
         drawPacman(g2d);
     }
+    private void moveGhosts(Graphics2D g2d) {
+        short i ;
+        int pos ;
+        int count ;
+        for( i = 0 ; i < N_GHOSTS ; i++) {
+            if(ghost_x[i] % Block_Size == 0 && ghost_y[i] % Block_Size == 0) {
+                pos = ghost_x[i] / Block_Size + N_GHOSTS*(int)(ghost_y[i]/Block_Size);
+                count = 0 ;
+                if((screenData[pos] & 1) == 0 && ghost_dx[i] != 1) {
+                    dx[count] = -1 ;
+                    dy[count] = 0 ;
+                    count++;
+                }
+                if((screenData[pos] & 2) == 0 && ghost_dy[i] != 1) {
+                    dx[count] = 0 ;
+                    dy[count] = -1 ;
+                    count++;
+                }
+                if((screenData[pos] & 4) == 0 && ghost_dx[i] != -1) {
+                    dx[count] = 1 ;
+                    dy[count] = 0 ;
+                    count++;
+                }
+                if((screenData[pos] & 8) == 0 && ghost_dy[i] != -1) {
+                    dx[count] = 1 ;
+                    dy[count] = 0 ;
+                    count++;
+                }
+                if(count == 0) {
+                    if((screenData[pos] & 15 ) == 15) {
+                        ghost_dx[i] = 0 ;
+                        ghost_dy[i] = 0 ;
+                    }
+                    else {
+                        ghost_dx[i] = -ghost_dy[i];
+                    }
+                }
+                else {
+                    count = (int)(Math.random()*count);
+                    if(count > 3) {
+                        count = 3 ;
+                    }
+                    ghost_dx[i] = dx[count];
+                    ghost_dy[i] = dy[count];
+                }
+            }
+            ghost_x[i] = ghost_x[i] + (ghost_dx[i]*ghostSpeed[i]);
+            ghost_y[i] = ghost_y[i] + (ghost_dy[i]*ghostSpeed[i]);
+            if(pacman_x > (ghost_x[i] -12) && pacman_x < (ghost_x[i]+12)
+                   && pacman_y > (ghost_y[i]-12) && pacman_y <(ghost_y[i]+12)
+                   && inGame) {
+                dying = true ;
+            }
+        }
+    }
+    pri
     private void movePacman() {
         int pos ;
         int ch ;
