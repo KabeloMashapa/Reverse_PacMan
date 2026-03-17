@@ -145,6 +145,7 @@ public class Board extends JPanel implements ActionListener {
             }
             ghost_x[i] = ghost_x[i] + (ghost_dx[i]*ghostSpeed[i]);
             ghost_y[i] = ghost_y[i] + (ghost_dy[i]*ghostSpeed[i]);
+            drawGhost(g2d,ghost_x[i]+1,ghost_y[i]+1);
             if(pacman_x > (ghost_x[i] -12) && pacman_x < (ghost_x[i]+12)
                    && pacman_y > (ghost_y[i]-12) && pacman_y <(ghost_y[i]+12)
                    && inGame) {
@@ -152,7 +153,9 @@ public class Board extends JPanel implements ActionListener {
             }
         }
     }
-    pri
+    private void drawGhost(Graphics2D g2d,int x,int y) {
+        g2d.drawImage(ghost,x,y,this);
+    }
     private void movePacman() {
         int pos ;
         int ch ;
