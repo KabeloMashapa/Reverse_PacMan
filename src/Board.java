@@ -2,8 +2,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.Toolkit;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.lang.IO;
 
-public class Board extends JPanel {
+public class Board extends JPanel implements ActionListener {
     private Dimension d ;
     private final Font smallFont = new Font("Helvetica",Font.BOLD,14);
     private Image ii ;
@@ -53,6 +58,7 @@ public class Board extends JPanel {
 
     }
     private void initBoard() {
+        addKeyListener(new TAdapter());
         setFocusable(true);
         setBackground(Color.black);
     }
@@ -67,6 +73,8 @@ public class Board extends JPanel {
         ghostSpeed = new int[MAX_GHOST];
         dx = new int[4];
         dy = new int[4];
+        timer = new Timer(40,this);
+        timer.start();
 
     }
     @Override
@@ -268,6 +276,43 @@ public class Board extends JPanel {
         pacman3right = new ImageIcon("Pacman_Pics/right2.png").getImage();
         pacman4right = new ImageIcon("Pacman_Pics/right3.png").getImage();
     }
+class TAdapter extends KeyAdapter {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            int key = e.getKeyCode();
+            if(inGame) {
+                if(key == KeyEvent.VK_LEFT) {
+                    req_dx =-1 ;
+                    req_dy = 0 ;
+                }
+                else if(key == KeyEvent.VK_RIGHT) {
+                    req_dx = 1 ;
+                    req_dy = 0 ;
+                }
+                else if(key == KeyEvent.VK_UP) {
+                    req_dx = 0 ;
+                    req_dy = -1 ;
+                }
+                else if(key == KeyEvent.VK_DOWN) {
+                    req_dx = 0 ;
+                    req_dy = 1 ;
+                }
 
+            }
+        }
+    @Override
+    public void keyReleased(KeyEvent e) {
+        int key = e.getKeyCode();
+        if(key == Event.LEFT || key == Event.RIGHT
+                || key == Event.UP || key == Event.DOWN ) {
+            req_dx = 0 ;
+            req_dy = 0 ;
+        }
+    }
+}
 
+    @Override
+    public void actionPerformed(ActionEvent e) {
+
+    }
 }
