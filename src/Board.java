@@ -82,6 +82,16 @@ public class Board extends JPanel implements ActionListener {
         super.addNotify();
         initGame();
     }
+    private void doAnim() {
+        pacAnimCount -- ;
+        if(pacAnimCount <= 0) {
+            pacAnimCount = PACMAN_ANIM_DELAY;
+            pacmanAnimPos = pacmanAnimPos + pacAnimDir ;
+            if(pacmanAnimPos == (PACMAN_ANIM_COUNT -1 ) || pacmanAnimPos == 0) {
+                pacAnimDir = -pacAnimDir;
+            }
+        }
+    }
     private void playGame(Graphics2D g2d) {
         movePacman();
         drawPacman(g2d);
@@ -253,6 +263,7 @@ public class Board extends JPanel implements ActionListener {
         Graphics2D g2d = (Graphics2D) g ;
         g2d.setColor(Color.black);
         g2d.fillRect(0,0,d.width,d.height);
+        doAnim();
         drawMaze(g2d);
         playGame(g2d);
         g2d.drawImage(ii,5,5,this);
