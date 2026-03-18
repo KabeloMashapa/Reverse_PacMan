@@ -283,6 +283,33 @@ public class Board extends JPanel implements ActionListener {
         for(i = 0 ; i < N_GHOSTS*N_GHOSTS;i++) {
             screenData[i] = levelData[i];
         }
+        continueLevel();
+    }
+    private void continueLevel() {
+        short i ;
+        int dx = 1 ;
+        int random ;
+        for(i = 0 ; i < N_GHOSTS ;i++) {
+            ghost_y[i] = 4 * Block_Size;
+            ghost_x[i] = 4 * Block_Size ;
+            ghost_dy[i] = 0 ;
+            ghost_dx[i] = dx ;
+            dx = -dx ;
+            random = (int)(Math.random() * (currentSpeed + 1));
+            if(random > currentSpeed) {
+                random = currentSpeed ;
+            }
+            ghostSpeed[i] = validSpeeds[random];
+        }
+        pacman_x = 7 * Block_Size ;
+        pacman_y = 11 * Block_Size ;
+        pacman_x = 0 ;
+        pacman_y = 0 ;
+        req_dx = 0 ;
+        req_dy = 0 ;
+        view_dx = -1 ;
+        view_dy = 0 ;
+        dying = false ;
     }
     private void drawMaze(Graphics2D g2d) {
         short i = 0 ;
