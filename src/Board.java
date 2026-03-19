@@ -4,25 +4,18 @@ import java.awt.event.*;
 
 public class Board extends JPanel implements ActionListener {
 
-    // -------------------------------------------------------------------------
-    // Constants
-    // -------------------------------------------------------------------------
     private final int BLOCK_SIZE  = 24;
     private final int N_BLOCKS    = 15;
     private final int SCREEN_SIZE = N_BLOCKS * BLOCK_SIZE;
 
     private final int PAC_ANIM_DELAY    = 2;
     private final int PACMAN_ANIM_COUNT = 4;
-    private final int PACMAN_SPEED      = 2;  // AI Pacman speed (pixels/tick)
-    private final int GHOST_SPEED       = 3;  // Player ghost speed (pixels/tick)
+    private final int PACMAN_SPEED      = 2;  // AI Pacman speed
+    private final int GHOST_SPEED       = 3;  // Player ghost speed
 
     private final int TIME_LIMIT_SECONDS = 60;
     private final int TICKS_PER_SECOND   = 25; // Timer fires every 40 ms
 
-    // -------------------------------------------------------------------------
-    // Maze layout
-    // Bit flags: 1=left wall  2=top wall  4=right wall  8=bottom wall  16=dot
-    // -------------------------------------------------------------------------
     private final short[] levelData = {
             19, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 22, 0,
             17, 16, 15, 13, 13, 13, 13, 13, 13, 13, 13, 13, 15, 14, 21,
@@ -41,9 +34,6 @@ public class Board extends JPanel implements ActionListener {
             25, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 28, 0
     };
 
-    // -------------------------------------------------------------------------
-    // State
-    // -------------------------------------------------------------------------
     private short[] screenData;
     private int totalDots;
 
@@ -85,9 +75,6 @@ public class Board extends JPanel implements ActionListener {
 
     private Timer timer;
 
-    // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
     public Board() {
         loadImages();
         initVariables();
@@ -112,10 +99,6 @@ public class Board extends JPanel implements ActionListener {
         super.addNotify();
         initGame();
     }
-
-    // -------------------------------------------------------------------------
-    // Initialise / reset a game round
-    // -------------------------------------------------------------------------
     private void initGame() {
         totalDots = 0;
         for (int i = 0; i < screenData.length; i++) {
@@ -131,7 +114,7 @@ public class Board extends JPanel implements ActionListener {
         req_dx   = 0;
         req_dy   = 0;
 
-        // AI Pacman — bottom-right area, starts moving left
+        // AI Pacman , bottom-right area, starts moving left
         pacman_x  = 11 * BLOCK_SIZE;
         pacman_y  = 11 * BLOCK_SIZE;
         pacman_dx = -1;
@@ -145,9 +128,6 @@ public class Board extends JPanel implements ActionListener {
         endMsg       = "";
     }
 
-    // -------------------------------------------------------------------------
-    // Pacman mouth animation
-    // -------------------------------------------------------------------------
     private void doAnim() {
         pacAnimCount--;
         if (pacAnimCount <= 0) {
@@ -158,10 +138,6 @@ public class Board extends JPanel implements ActionListener {
             }
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Main game loop — called each repaint while inGame == true
-    // -------------------------------------------------------------------------
     private void playGame(Graphics2D g2d) {
         ticksElapsed++;
 
@@ -194,9 +170,6 @@ public class Board extends JPanel implements ActionListener {
         drawHUD(g2d, dotsLeft);
     }
 
-    // -------------------------------------------------------------------------
-    // Player Ghost Movement  (arrow-key controlled)
-    // -------------------------------------------------------------------------
     private void movePlayerGhost() {
         // Apply the latest requested direction
         if (req_dx != 0 || req_dy != 0) {
@@ -212,9 +185,6 @@ public class Board extends JPanel implements ActionListener {
         ghost_y = Math.max(0, Math.min(ny, SCREEN_SIZE - BLOCK_SIZE));
     }
 
-    // -------------------------------------------------------------------------
-    // AI Pacman Movement  —  flees ghost when close, otherwise seeks nearest dot
-    // -------------------------------------------------------------------------
     private void moveAIPacman() {
         // Recalculate direction every 8 ticks to keep movement smooth
         if (ticksElapsed % 8 == 0) {
@@ -240,12 +210,7 @@ public class Board extends JPanel implements ActionListener {
         }
     }
 
-    /**
-     * Direction scoring:
-     *   - If ghost is within FLEE_RADIUS tiles, maximise Manhattan distance from ghost (flee).
-     *   - Otherwise, minimise Manhattan distance to the nearest remaining dot (seek).
-     * We evaluate all four cardinal directions and pick the highest-scoring valid one.
-     */
+
     private void choosePacmanDirection() {
         final int FLEE_RADIUS = BLOCK_SIZE * 5;
 
@@ -259,7 +224,7 @@ public class Board extends JPanel implements ActionListener {
         int bestDy    = pacman_dy;
 
         for (int d = 0; d < 4; d++) {
-            // Avoid immediate 180-degree reversal (causes jitter)
+
             if (ddx[d] == -pacman_dx && ddy[d] == -pacman_dy) continue;
 
             int nx = pacman_x + ddx[d] * BLOCK_SIZE;
@@ -287,7 +252,6 @@ public class Board extends JPanel implements ActionListener {
         pacman_dy = bestDy;
     }
 
-    /** Manhattan distance from (px, py) to the nearest remaining dot. */
     private int distToNearestDot(int px, int py) {
         int best = Integer.MAX_VALUE;
         for (int row = 0; row < N_BLOCKS; row++) {
@@ -309,18 +273,12 @@ public class Board extends JPanel implements ActionListener {
         return n;
     }
 
-    // -------------------------------------------------------------------------
-    // End-game helper
-    // -------------------------------------------------------------------------
     private void endGame(boolean playerWon, String message) {
         inGame = false;
         win    = playerWon;
         endMsg = message;
     }
 
-    // -------------------------------------------------------------------------
-    // Drawing helpers
-    // -------------------------------------------------------------------------
     private void drawMaze(Graphics2D g2d) {
         int i = 0;
         for (int y = 0; y < SCREEN_SIZE; y += BLOCK_SIZE) {
@@ -393,7 +351,6 @@ public class Board extends JPanel implements ActionListener {
         }
     }
 
-    /** HUD strip below the maze: dots remaining on the left, countdown on the right. */
     private void drawHUD(Graphics2D g2d, int dotsLeft) {
         int hudY = SCREEN_SIZE + 28;
         g2d.setFont(smallFont);
@@ -426,9 +383,6 @@ public class Board extends JPanel implements ActionListener {
         g2d.drawString(sub, (SCREEN_SIZE - fm.stringWidth(sub)) / 2, SCREEN_SIZE / 2 + 30);
     }
 
-    // -------------------------------------------------------------------------
-    // Paint
-    // -------------------------------------------------------------------------
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -450,9 +404,6 @@ public class Board extends JPanel implements ActionListener {
         Toolkit.getDefaultToolkit().sync();
     }
 
-    // -------------------------------------------------------------------------
-    // Image loading
-    // -------------------------------------------------------------------------
     private void loadImages() {
         ghostImg     = new ImageIcon(getClass().getResource("/Pacman_Pics/ghost.png")).getImage();
         pacman1      = new ImageIcon(getClass().getResource("/Pacman_Pics/pacman.png")).getImage();
@@ -470,9 +421,6 @@ public class Board extends JPanel implements ActionListener {
         pacman4right = new ImageIcon(getClass().getResource("/Pacman_Pics/right3.png")).getImage();
     }
 
-    // -------------------------------------------------------------------------
-    // Keyboard input
-    // -------------------------------------------------------------------------
     class TAdapter extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e) {
@@ -491,9 +439,6 @@ public class Board extends JPanel implements ActionListener {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Timer tick
-    // -------------------------------------------------------------------------
     @Override
     public void actionPerformed(ActionEvent e) {
         repaint();
