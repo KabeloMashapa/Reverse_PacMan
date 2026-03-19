@@ -77,7 +77,7 @@ java Main
 | ![Ghost hunting Pac-Man](Ghost_Hunting_Pacman.png)  | Ghost chasing Pac-Man |
 | ![Win screen](Winning_pic.png) | Ghost catches Pac-Man — win screen |
 
-> A demo clip (`Reverse_PacMan_demo.mp4`) can be added here to showcase real-time ghost strategy.
+
 
 ---
 
