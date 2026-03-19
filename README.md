@@ -73,9 +73,9 @@ java Main
 
 | Screenshot | Description |
 |---|---|
-| *(add image)* | Ghost navigating the maze |
-| *(add image)* | Pac-Man eating a power pellet |
-| *(add image)* | Ghost chasing Pac-Man |
+| ![Ghost navigating the maze](Screenshot_2026-03-19_182739.png)  | Ghost navigating the maze |
+| ![Ghost chasing Pac-Man](Screenshot_2026-03-19_182859.png)  | Pac-Man eating a power pellet |
+| ![Win screen](Screenshot_2026-03-19_182800.png) | Ghost chasing Pac-Man |
 
 > A demo clip (`Reverse_PacMan_demo.mp4`) can be added here to showcase real-time ghost strategy.
 
