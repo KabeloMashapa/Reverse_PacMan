@@ -4,48 +4,91 @@ import java.awt.event.*;
 
 public class Board extends JPanel implements ActionListener {
 
-    private final int BLOCK_SIZE = 24;
-    private final int N_BLOCKS = 15;
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
+    private final int BLOCK_SIZE  = 24;
+    private final int N_BLOCKS    = 15;
     private final int SCREEN_SIZE = N_BLOCKS * BLOCK_SIZE;
 
-    private final int PAC_ANIM_DELAY = 2;
+    private final int PAC_ANIM_DELAY    = 2;
     private final int PACMAN_ANIM_COUNT = 4;
-    private final int PACMAN_SPEED = 6;
+    private final int PACMAN_SPEED      = 2;  // AI Pacman speed (pixels/tick)
+    private final int GHOST_SPEED       = 3;  // Player ghost speed (pixels/tick)
 
-    private Dimension d;
-    private final Color dotColor = new Color(192, 192, 0);
-    private Color mazeColor;
-    private boolean inGame = true;
-    private boolean dying = false;
+    private final int TIME_LIMIT_SECONDS = 60;
+    private final int TICKS_PER_SECOND   = 25; // Timer fires every 40 ms
 
-    private int pacAnimCount = PAC_ANIM_DELAY;
-    private int pacAnimDir = 1;
-    private int pacmanAnimPos = 0;
+    // -------------------------------------------------------------------------
+    // Maze layout
+    // Bit flags: 1=left wall  2=top wall  4=right wall  8=bottom wall  16=dot
+    // -------------------------------------------------------------------------
+    private final short[] levelData = {
+            19, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 22, 0,
+            17, 16, 15, 13, 13, 13, 13, 13, 13, 13, 13, 13, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            17, 16, 15, 13, 16, 16, 16, 16, 16, 16, 16, 16, 15, 14, 21,
+            25, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 28, 0
+    };
 
-    private int N_GHOSTS = 6;
-    private int pacsLeft, score;
-
-    private int[] ghost_x, ghost_dx, ghost_y, ghost_dy, ghostSpeed, dx, dy;
-
-    private int pacman_x, pacman_y, pacman_dx, pacman_dy;
-    private int req_dx, req_dy, view_dx, view_dy;
-
+    // -------------------------------------------------------------------------
+    // State
+    // -------------------------------------------------------------------------
     private short[] screenData;
+    private int totalDots;
+
+    // Player-controlled ghost
+    private int ghost_x, ghost_y;
+    private int ghost_dx, ghost_dy;
+    private int req_dx,   req_dy;
+
+    // AI-controlled Pacman
+    private int pacman_x,  pacman_y;
+    private int pacman_dx, pacman_dy;
+    private int view_dx = -1, view_dy = 0;
+
+    // Animation
+    private int pacAnimCount   = PAC_ANIM_DELAY;
+    private int pacAnimDir     = 1;
+    private int pacmanAnimPos  = 0;
+
+    // Game status
+    private boolean inGame = false;
+    private boolean win    = false;
+    private String  endMsg = "";
+    private int     ticksElapsed = 0;
+
+    // Graphics helpers
+    private Dimension d;
+    private final Font smallFont = new Font("Helvetica", Font.BOLD, 14);
+    private final Font bigFont   = new Font("Helvetica", Font.BOLD, 20);
+    private final Color dotColor  = new Color(192, 192, 0);
+    private final Color mazeColor = new Color(5, 100, 5);
+
+    // Images
+    private Image ghostImg;
+    private Image pacman1;
+    private Image pacman2up,    pacman3up,    pacman4up;
+    private Image pacman2down,  pacman3down,  pacman4down;
+    private Image pacman2left,  pacman3left,  pacman4left;
+    private Image pacman2right, pacman3right, pacman4right;
+
     private Timer timer;
 
-    private Image ghost;
-    private Image pacman1, pacman2up, pacman2left, pacman2right, pacman2down;
-    private Image pacman3up, pacman3left, pacman3right, pacman3down;
-    private Image pacman4up, pacman4left, pacman4right, pacman4down;
-
-    private final short levelData[] = new short[N_BLOCKS * N_BLOCKS]; // 225 elements
-    private final int validSpeeds[] = {1,2,3,4,5,6,7,8};
-    private int currentSpeed = 3;
-
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
     public Board() {
-        setFocusable(true);
-        setBackground(Color.black);
-        setDoubleBuffered(true);
         loadImages();
         initVariables();
         initBoard();
@@ -53,35 +96,15 @@ public class Board extends JPanel implements ActionListener {
 
     private void initBoard() {
         addKeyListener(new TAdapter());
+        setFocusable(true);
+        setBackground(Color.black);
     }
 
     private void initVariables() {
-        mazeColor = new Color(5,100,5);
-        d = new Dimension(SCREEN_SIZE, SCREEN_SIZE);
         screenData = new short[N_BLOCKS * N_BLOCKS];
-
-        ghost_x = new int[N_GHOSTS];
-        ghost_dx = new int[N_GHOSTS];
-        ghost_y = new int[N_GHOSTS];
-        ghost_dy = new int[N_GHOSTS];
-        ghostSpeed = new int[N_GHOSTS];
-
-        dx = new int[4];
-        dy = new int[4];
-
-        timer = new Timer(40, this);
+        d          = new Dimension(SCREEN_SIZE, SCREEN_SIZE + 40); // extra 40px for HUD
+        timer      = new Timer(40, this);
         timer.start();
-
-        // Fill levelData with a simple maze (walls around, dots inside)
-        for (int i = 0; i < N_BLOCKS; i++) {
-            for (int j = 0; j < N_BLOCKS; j++) {
-                if (i==0 || i==N_BLOCKS-1 || j==0 || j==N_BLOCKS-1) {
-                    levelData[i * N_BLOCKS + j] = 15; // wall
-                } else {
-                    levelData[i * N_BLOCKS + j] = 16; // dot
-                }
-            }
-        }
     }
 
     @Override
@@ -90,193 +113,389 @@ public class Board extends JPanel implements ActionListener {
         initGame();
     }
 
+    // -------------------------------------------------------------------------
+    // Initialise / reset a game round
+    // -------------------------------------------------------------------------
     private void initGame() {
-        pacsLeft = 3;
-        score = 0;
-        initLevel();
-    }
-
-    private void initLevel() {
-        for (int i = 0; i < N_BLOCKS * N_BLOCKS; i++) {
+        totalDots = 0;
+        for (int i = 0; i < screenData.length; i++) {
             screenData[i] = levelData[i];
-        }
-        continueLevel();
-    }
-
-    private void continueLevel() {
-        int dxSign = 1;
-        for (int i = 0; i < N_GHOSTS; i++) {
-            ghost_x[i] = BLOCK_SIZE * 4;
-            ghost_y[i] = BLOCK_SIZE * 4;
-            ghost_dx[i] = dxSign;
-            ghost_dy[i] = 0;
-            dxSign = -dxSign;
-
-            int r = (int)(Math.random() * validSpeeds.length);
-            ghostSpeed[i] = validSpeeds[r];
+            if ((screenData[i] & 16) != 0) totalDots++;
         }
 
-        pacman_x = 7 * BLOCK_SIZE;
-        pacman_y = 11 * BLOCK_SIZE;
-        req_dx = 0;
-        req_dy = 0;
-        view_dx = -1;
-        view_dy = 0;
-        pacman_dx = 0;
+        // Player ghost — top-left corner
+        ghost_x  = 1 * BLOCK_SIZE;
+        ghost_y  = 1 * BLOCK_SIZE;
+        ghost_dx = 0;
+        ghost_dy = 0;
+        req_dx   = 0;
+        req_dy   = 0;
+
+        // AI Pacman — bottom-right area, starts moving left
+        pacman_x  = 11 * BLOCK_SIZE;
+        pacman_y  = 11 * BLOCK_SIZE;
+        pacman_dx = -1;
         pacman_dy = 0;
-        dying = false;
+        view_dx   = -1;
+        view_dy   = 0;
+
+        ticksElapsed = 0;
+        inGame       = true;
+        win          = false;
+        endMsg       = "";
     }
 
+    // -------------------------------------------------------------------------
+    // Pacman mouth animation
+    // -------------------------------------------------------------------------
     private void doAnim() {
         pacAnimCount--;
         if (pacAnimCount <= 0) {
             pacAnimCount = PAC_ANIM_DELAY;
             pacmanAnimPos += pacAnimDir;
-            if (pacmanAnimPos == PACMAN_ANIM_COUNT - 1 || pacmanAnimPos == 0) pacAnimDir = -pacAnimDir;
+            if (pacmanAnimPos == (PACMAN_ANIM_COUNT - 1) || pacmanAnimPos == 0) {
+                pacAnimDir = -pacAnimDir;
+            }
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Main game loop — called each repaint while inGame == true
+    // -------------------------------------------------------------------------
     private void playGame(Graphics2D g2d) {
-        movePacman();
-        moveGhosts(g2d);
+        ticksElapsed++;
+
+        // Time-limit check
+        if (ticksElapsed >= TIME_LIMIT_SECONDS * TICKS_PER_SECOND) {
+            endGame(false, "Time's up!  Pacman escaped!");
+            return;
+        }
+
+        movePlayerGhost();
+        moveAIPacman();
+
+        // Win: ghost catches Pacman
+        if (Math.abs(ghost_x - pacman_x) < BLOCK_SIZE - 4
+                && Math.abs(ghost_y - pacman_y) < BLOCK_SIZE - 4) {
+            endGame(true, "You caught Pacman!  You win!");
+            return;
+        }
+
+        // Lose: all dots eaten
+        int dotsLeft = countDots();
+        if (dotsLeft == 0) {
+            endGame(false, "Pacman ate every dot!  You lose!");
+            return;
+        }
+
+        drawMaze(g2d);
+        drawGhostSprite(g2d, ghost_x, ghost_y);
         drawPacman(g2d);
+        drawHUD(g2d, dotsLeft);
     }
 
-    private void moveGhosts(Graphics2D g2d) {
-        for (int i = 0; i < N_GHOSTS; i++) {
-            if (ghost_x[i] % BLOCK_SIZE == 0 && ghost_y[i] % BLOCK_SIZE == 0) {
-                int pos = ghost_x[i]/BLOCK_SIZE + N_BLOCKS*(ghost_y[i]/BLOCK_SIZE);
+    // -------------------------------------------------------------------------
+    // Player Ghost Movement  (arrow-key controlled)
+    // -------------------------------------------------------------------------
+    private void movePlayerGhost() {
+        // Apply the latest requested direction
+        if (req_dx != 0 || req_dy != 0) {
+            ghost_dx = req_dx;
+            ghost_dy = req_dy;
+        }
 
-                if (pos < 0 || pos >= screenData.length) pos = 0; // safety
+        int nx = ghost_x + GHOST_SPEED * ghost_dx;
+        int ny = ghost_y + GHOST_SPEED * ghost_dy;
 
-                int count = 0;
-                if ((screenData[pos] & 1) == 0 && ghost_dx[i] != 1) { dx[count]= -1; dy[count]=0; count++; }
-                if ((screenData[pos] & 2) == 0 && ghost_dy[i] != 1) { dx[count]= 0; dy[count]=-1; count++; }
-                if ((screenData[pos] & 4) == 0 && ghost_dx[i] != -1){ dx[count]=1; dy[count]=0; count++; }
-                if ((screenData[pos] & 8) == 0 && ghost_dy[i] != -1){ dx[count]=0; dy[count]=1; count++; }
+        // Clamp within maze
+        ghost_x = Math.max(0, Math.min(nx, SCREEN_SIZE - BLOCK_SIZE));
+        ghost_y = Math.max(0, Math.min(ny, SCREEN_SIZE - BLOCK_SIZE));
+    }
 
-                if (count == 0) { ghost_dx[i] = 0; ghost_dy[i] = 0; }
-                else {
-                    int r = (int)(Math.random()*count);
-                    ghost_dx[i] = dx[r];
-                    ghost_dy[i] = dy[r];
+    // -------------------------------------------------------------------------
+    // AI Pacman Movement  —  flees ghost when close, otherwise seeks nearest dot
+    // -------------------------------------------------------------------------
+    private void moveAIPacman() {
+        // Recalculate direction every 8 ticks to keep movement smooth
+        if (ticksElapsed % 8 == 0) {
+            choosePacmanDirection();
+        }
+
+        int nx = pacman_x + PACMAN_SPEED * pacman_dx;
+        int ny = pacman_y + PACMAN_SPEED * pacman_dy;
+
+        pacman_x = Math.max(0, Math.min(nx, SCREEN_SIZE - BLOCK_SIZE));
+        pacman_y = Math.max(0, Math.min(ny, SCREEN_SIZE - BLOCK_SIZE));
+
+        // Sync view direction for animation
+        if      (pacman_dx == -1) { view_dx = -1; view_dy =  0; }
+        else if (pacman_dx ==  1) { view_dx =  1; view_dy =  0; }
+        else if (pacman_dy == -1) { view_dx =  0; view_dy = -1; }
+        else if (pacman_dy ==  1) { view_dx =  0; view_dy =  1; }
+
+        // Eat dot under Pacman
+        int pos = (pacman_y / BLOCK_SIZE) * N_BLOCKS + (pacman_x / BLOCK_SIZE);
+        if (pos >= 0 && pos < screenData.length && (screenData[pos] & 16) != 0) {
+            screenData[pos] = (short) (screenData[pos] & 15);
+        }
+    }
+
+    /**
+     * Direction scoring:
+     *   - If ghost is within FLEE_RADIUS tiles, maximise Manhattan distance from ghost (flee).
+     *   - Otherwise, minimise Manhattan distance to the nearest remaining dot (seek).
+     * We evaluate all four cardinal directions and pick the highest-scoring valid one.
+     */
+    private void choosePacmanDirection() {
+        final int FLEE_RADIUS = BLOCK_SIZE * 5;
+
+        boolean fleeing = (Math.abs(pacman_x - ghost_x) + Math.abs(pacman_y - ghost_y)) < FLEE_RADIUS;
+
+        int[] ddx = {-1,  1,  0, 0};
+        int[] ddy = { 0,  0, -1, 1};
+
+        int bestScore = Integer.MIN_VALUE;
+        int bestDx    = pacman_dx;
+        int bestDy    = pacman_dy;
+
+        for (int d = 0; d < 4; d++) {
+            // Avoid immediate 180-degree reversal (causes jitter)
+            if (ddx[d] == -pacman_dx && ddy[d] == -pacman_dy) continue;
+
+            int nx = pacman_x + ddx[d] * BLOCK_SIZE;
+            int ny = pacman_y + ddy[d] * BLOCK_SIZE;
+
+            if (nx < 0 || ny < 0 || nx >= SCREEN_SIZE || ny >= SCREEN_SIZE) continue;
+
+            int score;
+            if (fleeing) {
+                // Higher distance from ghost = better
+                score = Math.abs(nx - ghost_x) + Math.abs(ny - ghost_y);
+            } else {
+                // Lower distance to nearest dot = better (negate so higher = better)
+                score = -distToNearestDot(nx, ny);
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestDx    = ddx[d];
+                bestDy    = ddy[d];
+            }
+        }
+
+        pacman_dx = bestDx;
+        pacman_dy = bestDy;
+    }
+
+    /** Manhattan distance from (px, py) to the nearest remaining dot. */
+    private int distToNearestDot(int px, int py) {
+        int best = Integer.MAX_VALUE;
+        for (int row = 0; row < N_BLOCKS; row++) {
+            for (int col = 0; col < N_BLOCKS; col++) {
+                if ((screenData[row * N_BLOCKS + col] & 16) != 0) {
+                    int dist = Math.abs(px - col * BLOCK_SIZE) + Math.abs(py - row * BLOCK_SIZE);
+                    if (dist < best) best = dist;
                 }
             }
-
-            ghost_x[i] += ghost_dx[i]*ghostSpeed[i];
-            ghost_y[i] += ghost_dy[i]*ghostSpeed[i];
-
-            // Draw ghost
-            g2d.drawImage(ghost, ghost_x[i]+1, ghost_y[i]+1, this);
-
-            // Collision with Pacman
-            if (pacman_x > ghost_x[i]-12 && pacman_x < ghost_x[i]+12 &&
-                    pacman_y > ghost_y[i]-12 && pacman_y < ghost_y[i]+12 &&
-                    inGame) {
-                dying = true;
-            }
         }
+        return (best == Integer.MAX_VALUE) ? 0 : best;
     }
 
-    private void movePacman() {
-        int pos = pacman_x / BLOCK_SIZE + N_BLOCKS * (pacman_y / BLOCK_SIZE);
-        if (pos < 0 || pos >= screenData.length) pos = 0;
-
-        short ch = screenData[pos];
-
-        if ((ch & 16) != 0) {
-            screenData[pos] = (short)(ch & 15);
-            score++;
+    private int countDots() {
+        int n = 0;
+        for (short cell : screenData) {
+            if ((cell & 16) != 0) n++;
         }
-
-        // Change direction
-        if (req_dx != 0 || req_dy != 0) {
-            pacman_dx = req_dx;
-            pacman_dy = req_dy;
-            view_dx = pacman_dx;
-            view_dy = pacman_dy;
-        }
-
-        pacman_x += PACMAN_SPEED*pacman_dx;
-        pacman_y += PACMAN_SPEED*pacman_dy;
-
-        // Keep Pacman inside bounds
-        if (pacman_x < 0) pacman_x = 0;
-        if (pacman_x > SCREEN_SIZE-BLOCK_SIZE) pacman_x = SCREEN_SIZE-BLOCK_SIZE;
-        if (pacman_y < 0) pacman_y = 0;
-        if (pacman_y > SCREEN_SIZE-BLOCK_SIZE) pacman_y = SCREEN_SIZE-BLOCK_SIZE;
+        return n;
     }
 
-    private void drawPacman(Graphics2D g2d) {
-        Image img = pacman1;
-        if (view_dx == -1) img = pacman2left;
-        if (view_dx == 1) img = pacman2right;
-        if (view_dy == -1) img = pacman2up;
-        if (view_dy == 1) img = pacman2down;
-        g2d.drawImage(img, pacman_x, pacman_y, this);
+    // -------------------------------------------------------------------------
+    // End-game helper
+    // -------------------------------------------------------------------------
+    private void endGame(boolean playerWon, String message) {
+        inGame = false;
+        win    = playerWon;
+        endMsg = message;
     }
 
+    // -------------------------------------------------------------------------
+    // Drawing helpers
+    // -------------------------------------------------------------------------
     private void drawMaze(Graphics2D g2d) {
         int i = 0;
-        for (int y=0;y<SCREEN_SIZE;y+=BLOCK_SIZE){
-            for(int x=0;x<SCREEN_SIZE;x+=BLOCK_SIZE){
+        for (int y = 0; y < SCREEN_SIZE; y += BLOCK_SIZE) {
+            for (int x = 0; x < SCREEN_SIZE; x += BLOCK_SIZE) {
                 g2d.setColor(mazeColor);
                 g2d.setStroke(new BasicStroke(2));
-                if ((screenData[i]&1)!=0) g2d.drawLine(x,y,x,y+BLOCK_SIZE-1);
-                if ((screenData[i]&2)!=0) g2d.drawLine(x,y,x+BLOCK_SIZE-1,y);
-                if ((screenData[i]&4)!=0) g2d.drawLine(x+BLOCK_SIZE-1,y,x+BLOCK_SIZE-1,y+BLOCK_SIZE-1);
-                if ((screenData[i]&8)!=0) g2d.drawLine(x,y+BLOCK_SIZE-1,x+BLOCK_SIZE-1,y+BLOCK_SIZE-1);
-                if ((screenData[i]&16)!=0){
+
+                if ((screenData[i] & 1) != 0) // left wall
+                    g2d.drawLine(x, y, x, y + BLOCK_SIZE - 1);
+                if ((screenData[i] & 2) != 0) // top wall
+                    g2d.drawLine(x, y, x + BLOCK_SIZE - 1, y);
+                if ((screenData[i] & 4) != 0) // right wall
+                    g2d.drawLine(x + BLOCK_SIZE - 1, y, x + BLOCK_SIZE - 1, y + BLOCK_SIZE - 1);
+                if ((screenData[i] & 8) != 0) // bottom wall
+                    g2d.drawLine(x, y + BLOCK_SIZE - 1, x + BLOCK_SIZE - 1, y + BLOCK_SIZE - 1);
+
+                if ((screenData[i] & 16) != 0) { // dot
                     g2d.setColor(dotColor);
-                    g2d.fillOval(x+11,y+11,2,2);
+                    g2d.fillOval(x + 10, y + 10, 4, 4);
                 }
                 i++;
             }
         }
     }
 
-    @Override
-    protected void paintComponent(Graphics g){
-        super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
-        doAnim();
+    private void drawGhostSprite(Graphics2D g2d, int x, int y) {
+        g2d.drawImage(ghostImg, x, y, this);
+    }
+
+    private void drawPacman(Graphics2D g2d) {
+        if      (view_dx == -1) drawPacmanLeft(g2d);
+        else if (view_dx ==  1) drawPacmanRight(g2d);
+        else if (view_dy == -1) drawPacmanUp(g2d);
+        else                    drawPacmanDown(g2d);
+    }
+
+    private void drawPacmanUp(Graphics2D g2d) {
+        switch (pacmanAnimPos) {
+            case 1:  g2d.drawImage(pacman2up,    pacman_x, pacman_y, this); break;
+            case 2:  g2d.drawImage(pacman3up,    pacman_x, pacman_y, this); break;
+            case 3:  g2d.drawImage(pacman4up,    pacman_x, pacman_y, this); break;
+            default: g2d.drawImage(pacman1,      pacman_x, pacman_y, this); break;
+        }
+    }
+
+    private void drawPacmanDown(Graphics2D g2d) {
+        switch (pacmanAnimPos) {
+            case 1:  g2d.drawImage(pacman2down,  pacman_x, pacman_y, this); break;
+            case 2:  g2d.drawImage(pacman3down,  pacman_x, pacman_y, this); break;
+            case 3:  g2d.drawImage(pacman4down,  pacman_x, pacman_y, this); break;
+            default: g2d.drawImage(pacman1,      pacman_x, pacman_y, this); break;
+        }
+    }
+
+    private void drawPacmanLeft(Graphics2D g2d) {
+        switch (pacmanAnimPos) {
+            case 1:  g2d.drawImage(pacman2left,  pacman_x, pacman_y, this); break;
+            case 2:  g2d.drawImage(pacman3left,  pacman_x, pacman_y, this); break;
+            case 3:  g2d.drawImage(pacman4left,  pacman_x, pacman_y, this); break;
+            default: g2d.drawImage(pacman1,      pacman_x, pacman_y, this); break;
+        }
+    }
+
+    private void drawPacmanRight(Graphics2D g2d) {
+        switch (pacmanAnimPos) {
+            case 1:  g2d.drawImage(pacman2right, pacman_x, pacman_y, this); break;
+            case 2:  g2d.drawImage(pacman3right, pacman_x, pacman_y, this); break;
+            case 3:  g2d.drawImage(pacman4right, pacman_x, pacman_y, this); break;
+            default: g2d.drawImage(pacman1,      pacman_x, pacman_y, this); break;
+        }
+    }
+
+    /** HUD strip below the maze: dots remaining on the left, countdown on the right. */
+    private void drawHUD(Graphics2D g2d, int dotsLeft) {
+        int hudY = SCREEN_SIZE + 28;
+        g2d.setFont(smallFont);
+        g2d.setColor(Color.WHITE);
+
+        g2d.drawString("Dots left: " + dotsLeft + " / " + totalDots, 8, hudY);
+
+        int secondsLeft = Math.max(0, TIME_LIMIT_SECONDS - ticksElapsed / TICKS_PER_SECOND);
+        String timeStr  = "Time: " + secondsLeft + "s";
+        FontMetrics fm  = g2d.getFontMetrics();
+        g2d.drawString(timeStr, SCREEN_SIZE - fm.stringWidth(timeStr) - 8, hudY);
+    }
+
+    /** Semi-transparent overlay shown on win or lose. */
+    private void drawEndScreen(Graphics2D g2d) {
         drawMaze(g2d);
-        playGame(g2d);
+
+        g2d.setColor(new Color(0, 0, 0, 180));
+        g2d.fillRect(0, SCREEN_SIZE / 2 - 50, SCREEN_SIZE, 100);
+
+        g2d.setFont(bigFont);
+        FontMetrics fm = g2d.getFontMetrics();
+        g2d.setColor(win ? Color.GREEN : Color.RED);
+        g2d.drawString(endMsg, (SCREEN_SIZE - fm.stringWidth(endMsg)) / 2, SCREEN_SIZE / 2);
+
+        String sub = "Press ENTER to play again";
+        g2d.setFont(smallFont);
+        fm = g2d.getFontMetrics();
+        g2d.setColor(Color.WHITE);
+        g2d.drawString(sub, (SCREEN_SIZE - fm.stringWidth(sub)) / 2, SCREEN_SIZE / 2 + 30);
+    }
+
+    // -------------------------------------------------------------------------
+    // Paint
+    // -------------------------------------------------------------------------
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        doDrawing(g);
+    }
+
+    private void doDrawing(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setColor(Color.black);
+        g2d.fillRect(0, 0, d.width, d.height);
+        doAnim();
+
+        if (inGame) {
+            playGame(g2d);
+        } else {
+            drawEndScreen(g2d);
+        }
+
         Toolkit.getDefaultToolkit().sync();
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e){
-        repaint();
-    }
-
+    // -------------------------------------------------------------------------
+    // Image loading
+    // -------------------------------------------------------------------------
     private void loadImages() {
-        ghost = new ImageIcon(getClass().getResource("/Pacman_Pics/ghost.png")).getImage();
-        pacman1 = new ImageIcon(getClass().getResource("/Pacman_Pics/pacman.png")).getImage();
-        pacman2up = new ImageIcon(getClass().getResource("/Pacman_Pics/up1.png")).getImage();
-        pacman2down = new ImageIcon(getClass().getResource("/Pacman_Pics/down1.png")).getImage();
-        pacman2left = new ImageIcon(getClass().getResource("/Pacman_Pics/left1.png")).getImage();
+        ghostImg     = new ImageIcon(getClass().getResource("/Pacman_Pics/ghost.png")).getImage();
+        pacman1      = new ImageIcon(getClass().getResource("/Pacman_Pics/pacman.png")).getImage();
+        pacman2up    = new ImageIcon(getClass().getResource("/Pacman_Pics/up1.png")).getImage();
+        pacman3up    = new ImageIcon(getClass().getResource("/Pacman_Pics/up2.png")).getImage();
+        pacman4up    = new ImageIcon(getClass().getResource("/Pacman_Pics/up3.png")).getImage();
+        pacman2down  = new ImageIcon(getClass().getResource("/Pacman_Pics/down1.png")).getImage();
+        pacman3down  = new ImageIcon(getClass().getResource("/Pacman_Pics/down2.png")).getImage();
+        pacman4down  = new ImageIcon(getClass().getResource("/Pacman_Pics/down3.png")).getImage();
+        pacman2left  = new ImageIcon(getClass().getResource("/Pacman_Pics/left1.png")).getImage();
+        pacman3left  = new ImageIcon(getClass().getResource("/Pacman_Pics/left2.png")).getImage();
+        pacman4left  = new ImageIcon(getClass().getResource("/Pacman_Pics/left3.png")).getImage();
         pacman2right = new ImageIcon(getClass().getResource("/Pacman_Pics/right1.png")).getImage();
-        pacman3up = pacman2up;
-        pacman3down = pacman2down;
-        pacman3left = pacman2left;
-        pacman3right = pacman2right;
-        pacman4up = pacman2up;
-        pacman4down = pacman2down;
-        pacman4left = pacman2left;
-        pacman4right = pacman2right;
+        pacman3right = new ImageIcon(getClass().getResource("/Pacman_Pics/right2.png")).getImage();
+        pacman4right = new ImageIcon(getClass().getResource("/Pacman_Pics/right3.png")).getImage();
     }
 
-    private class TAdapter extends KeyAdapter {
+    // -------------------------------------------------------------------------
+    // Keyboard input
+    // -------------------------------------------------------------------------
+    class TAdapter extends KeyAdapter {
         @Override
-        public void keyPressed(KeyEvent e){
+        public void keyPressed(KeyEvent e) {
             int key = e.getKeyCode();
-            if (inGame) {
-                if (key == KeyEvent.VK_LEFT) { req_dx=-1; req_dy=0; }
-                if (key == KeyEvent.VK_RIGHT) { req_dx=1; req_dy=0; }
-                if (key == KeyEvent.VK_UP) { req_dx=0; req_dy=-1; }
-                if (key == KeyEvent.VK_DOWN) { req_dx=0; req_dy=1; }
+
+            if (!inGame) {
+                if (key == KeyEvent.VK_ENTER) initGame(); // restart
+                return;
             }
+
+            // Player controls the ghost with arrow keys
+            if      (key == KeyEvent.VK_LEFT)  { req_dx = -1; req_dy =  0; }
+            else if (key == KeyEvent.VK_RIGHT)  { req_dx =  1; req_dy =  0; }
+            else if (key == KeyEvent.VK_UP)     { req_dx =  0; req_dy = -1; }
+            else if (key == KeyEvent.VK_DOWN)   { req_dx =  0; req_dy =  1; }
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Timer tick
+    // -------------------------------------------------------------------------
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        repaint();
     }
 }
