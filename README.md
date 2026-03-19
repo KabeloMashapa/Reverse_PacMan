@@ -1,6 +1,6 @@
 # Reverse Pac-Man
 
-A modern, strategic twist on the classic arcade game. Instead of controlling Pac-Man, **you play as the ghost** — hunt Pac-Man through the maze, anticipate his movements, and use special abilities to catch him before he collects all the pellets.
+A modern, strategic twist on the classic arcade game. Instead of controlling Pac-Man, **you play as the ghost** ,hunt Pac-Man through the maze, anticipate his movements, and use special abilities to catch him before he collects all the pellets.
 
 ---
 
