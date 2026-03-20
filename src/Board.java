@@ -169,6 +169,31 @@ public class Board extends JPanel implements ActionListener {
         drawPacman(g2d);
         drawHUD(g2d, dotsLeft);
     }
+    private boolean canMove(int px,int py,int dx,int dy,int speed) {
+        int nx = px + dx * speed ;
+        int ny = py + dy * speed ;
+
+        if(nx < 0 || ny < 0 || nx + BLOCK_SIZE > SCREEN_SIZE || ny + BLOCK_SIZE > SCREEN_SIZE)
+            return false ;
+        int [] xs = {nx,nx + BLOCK_SIZE - 1};
+        int [] ys = {ny,ny + BLOCK_SIZE - 1};
+
+        for(int cy : ys) {
+            for (int cx : xs) {
+                int col = cx / BLOCK_SIZE;
+                int row = cy / BLOCK_SIZE;
+                int idx = row * N_BLOCKS + col;
+                if (idx < 0 || idx >= screenData.length) return false;
+                short cell = screenData[idx];
+                if (dx == 1 && (cell & 1) != 0) return false;
+                if (dx == -1 && (cell & 4) != 0) return false;
+                if (dy == 1 && (cell & 2) != 0) return false;
+                if (dy == -1 && (cell & 8) != 0) return false;
+            }
+
+        }
+        return true ;
+    }
 
     private void movePlayerGhost() {
         // Apply the latest requested direction
