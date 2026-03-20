@@ -211,13 +211,17 @@ public class Board extends JPanel implements ActionListener {
         if (ticksElapsed % 8 == 0) {
             choosePacmanDirection();
         }
-
-        int nx = pacman_x + PACMAN_SPEED * pacman_dx;
-        int ny = pacman_y + PACMAN_SPEED * pacman_dy;
-
-        pacman_x = Math.max(0, Math.min(nx, SCREEN_SIZE - BLOCK_SIZE));
-        pacman_y = Math.max(0, Math.min(ny, SCREEN_SIZE - BLOCK_SIZE));
-
+        if(canMove(pacman_x,pacman_y,pacman_dx,pacman_dy,PACMAN_SPEED)) {
+            pacman_x += PACMAN_SPEED * pacman_dx ;
+            pacman_y += PACMAN_SPEED * pacman_dy ;
+        }
+        else {
+            choosePacmanDirection();
+            if(canMove(pacman_x,pacman_y,pacman_dx,pacman_dy,PACMAN_SPEED)) {
+                pacman_x += PACMAN_SPEED * pacman_dx ;
+                pacman_y += PACMAN_SPEED * pacman_dy ;
+            }
+        }
         // Sync view direction for animation
         if      (pacman_dx == -1) { view_dx = -1; view_dy =  0; }
         else if (pacman_dx ==  1) { view_dx =  1; view_dy =  0; }
