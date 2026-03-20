@@ -251,28 +251,16 @@ public class Board extends JPanel implements ActionListener {
         for (int d = 0; d < 4; d++) {
 
             if (ddx[d] == -pacman_dx && ddy[d] == -pacman_dy) continue;
-            if(!canMove(pacman_x,pacman_y,ddx[d],ddy[d],PACMAN_SPEED)) continue;
+            if (!canMove(pacman_x, pacman_y, ddx[d], ddy[d], PACMAN_SPEED)) continue;
 
 
             int nx = pacman_x + ddx[d] * BLOCK_SIZE;
             int ny = pacman_y + ddy[d] * BLOCK_SIZE;
-            int score = fleeing ? Math.abs(nx - ghost_x) + Math.abs(ny - ghost_y) : -distToNearestDot(nx,ny);
-            if(score > bestScore) {
-                bestScore = score ;
+            int score = fleeing ? Math.abs(nx - ghost_x) + Math.abs(ny - ghost_y) : -distToNearestDot(nx, ny);
+            if (score > bestScore) {
+                bestScore = score;
                 bestDx = ddx[d];
                 bestDy = ddy[d];
-            }
-
-
-            if (nx < 0 || ny < 0 || nx >= SCREEN_SIZE || ny >= SCREEN_SIZE) continue;
-
-            int score;
-            if (fleeing) {
-                // Higher distance from ghost = better
-                score = Math.abs(nx - ghost_x) + Math.abs(ny - ghost_y);
-            } else {
-                // Lower distance to nearest dot = better (negate so higher = better)
-                score = -distToNearestDot(nx, ny);
             }
         }
         // No valid non-reversing move found, allows reversing as last option
