@@ -196,18 +196,14 @@ public class Board extends JPanel implements ActionListener {
     }
 
     private void movePlayerGhost() {
-        // Apply the latest requested direction
-        if (req_dx != 0 || req_dy != 0) {
-            ghost_dx = req_dx;
-            ghost_dy = req_dy;
-        }
-
-        int nx = ghost_x + GHOST_SPEED * ghost_dx;
-        int ny = ghost_y + GHOST_SPEED * ghost_dy;
-
-        // Clamp within maze
-        ghost_x = Math.max(0, Math.min(nx, SCREEN_SIZE - BLOCK_SIZE));
-        ghost_y = Math.max(0, Math.min(ny, SCREEN_SIZE - BLOCK_SIZE));
+       if((req_dx != 0 || req_dy != 0) && canMove(ghost_x,ghost_y,req_dx,req_dy,GHOST_SPEED)) {
+           ghost_dx = req_dx ;
+           ghost_dy = req_dy ;
+       }
+       if(canMove(ghost_x,ghost_y,ghost_dx,ghost_dy,GHOST_SPEED)) {
+           ghost_x += GHOST_SPEED * ghost_dx ;
+           ghost_y += GHOST_SPEED * ghost_dy ;
+       }
     }
 
     private void moveAIPacman() {
